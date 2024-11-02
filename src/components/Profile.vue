@@ -116,6 +116,7 @@ const saveAvailability = async () => {
 onAuthStateChanged(auth, async (currentUser) => {
     user.value = currentUser;
     if (user.value) {
+        await fetchAppointments();
         try {
             const userRef = doc(db, 'users', user.value.uid);
             const userDoc = await getDoc(userRef);
