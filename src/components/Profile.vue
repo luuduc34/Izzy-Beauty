@@ -7,12 +7,32 @@
             </div>
             <font-awesome-icon icon="home" class="home-icon" @click="goToHomepage" />
         </section>
+        <div>
 
+        </div>
         <!-- Profile Content Section -->
         <section class="profile-content">
             <h1 class="welcome">Bonjour, {{ user.displayName }}</h1>
             <img :src="user.photoURL" alt="Profile Picture" class="profile-picture" />
             <button @click="logout" class="profile-button">Se Déconnecter</button>
+        </section>
+
+        <!-- Employee Section -->
+        <section class="appointments-section">
+            <div v-if="userRole === 'employee'">
+                <!-- Interface pour les employés -->
+                <div class="availability-container">
+                    <h2>Encoder vos disponibilités</h2>
+                    <Datepicker v-model="selectedDate" :min-date="minDate" :show-time="true"
+                        :time-steps="{ hours: 1 }" />
+                    <select v-model="selectedService">
+                        <option v-for="service in services" :key="service.title" :value="service.title">
+                            {{ service.title }}
+                        </option>
+                    </select>
+                    <button @click="saveAvailability">Enregistrer la disponibilité</button>
+                </div>
+            </div>
         </section>
 
         <!-- Rendez-vous Section -->
@@ -40,6 +60,8 @@
             <div class="hero-content">
                 <h1 class="title">Izzy Beauty</h1>
             </div>
+            <!-- Home Icon -->
+            <font-awesome-icon icon="home" class="home-icon" @click="goToHomepage" />
         </section>
         <h2>Connectez-vous pour accéder à votre profil</h2>
         <button @click="signInWithGoogle">Se Connecter avec Google</button>
@@ -52,27 +74,80 @@ import { auth } from '../firebaseConfig';
 import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'vue-router';
 import { db } from '../firebaseConfig'; // Import Firestore
-import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore'; // Import Firestore methods
+import { collection, query, where, getDocs, deleteDoc, doc, getDoc, setDoc, addDoc } from 'firebase/firestore';
+import Datepicker from '@vuepic/vue-datepicker';
+import '@vuepic/vue-datepicker/dist/main.css';
 
 import Contact from "./Contact.vue";
 
 const router = useRouter();
+const userRole = ref('');
 const user = ref(null);
 const appointments = ref([]);
+const selectedDate = ref(null);
+const selectedService = ref('');
+const services = [
+    { title: 'Soin du Visage' },
+    { title: 'Massages Relaxants' },
+    { title: 'Manucure et Pédicure' }
+];
+const minDate = new Date();
+
+const saveAvailability = async () => {
+    if (!selectedDate.value || !selectedService.value) {
+        alert("Veuillez sélectionner une date et un service.");
+        return;
+    }
+
+    try {
+        await addDoc(collection(db, 'availabilities'), {
+            employeeId: auth.currentUser.uid,
+            date: selectedDate.value,
+            service: selectedService.value
+        });
+        alert('Disponibilité enregistrée avec succès!');
+    } catch (error) {
+        console.error('Erreur lors de l\'enregistrement:', error);
+        alert("Erreur lors de l'enregistrement. Veuillez réessayer.");
+    }
+};
 
 // Observer l'état d'authentification
 onAuthStateChanged(auth, async (currentUser) => {
     user.value = currentUser;
     if (user.value) {
-        await fetchAppointments();
+        try {
+            const userRef = doc(db, 'users', user.value.uid);
+            const userDoc = await getDoc(userRef);
+            if (userDoc.exists()) {
+                userRole.value = userDoc.data().role; // Récupérer le rôle de l'utilisateur
+            } else {
+                console.error("Utilisateur non trouvé.");
+            }
+        } catch (error) {
+            console.error("Erreur lors de la récupération du rôle de l'utilisateur :", error);
+        }
     }
 });
 
-// Fonction de connexion avec Google
 const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-        await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        // Ajouter un document utilisateur si ce n'est pas déjà fait
+        const userRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userRef);
+        if (!userDoc.exists()) {
+            // Créer un nouveau document pour cet utilisateur
+            await setDoc(userRef, {
+                role: 'client',  // Par exemple, définir un rôle par défaut
+                displayName: user.displayName,
+                email: user.email
+            });
+            console.log("Nouveau document utilisateur créé !");
+        }
     } catch (error) {
         console.error("Erreur d'authentification:", error);
     }
@@ -171,7 +246,22 @@ const cancelAppointment = async (appointment) => {
 
 .main-container {
     min-height: 100vh;
-    min-width: 900px;
+    min-width: 993px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f7fafc;
+}
+
+.availability-container {
+    max-width: 600px;
+    margin: auto;
+    text-align: center;
+}
+
+.login-container {
+    min-height: 100vh;
+    min-width: 993px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -250,7 +340,6 @@ const cancelAppointment = async (appointment) => {
 
 .appointments-section {
     width: 90%;
-    max-width: 80rem;
     padding: 2rem;
     margin-top: 2rem;
     background-color: #fff;
@@ -310,5 +399,20 @@ const cancelAppointment = async (appointment) => {
 
 .home-icon:hover {
     background-color: rgba(0, 0, 0, 0.8);
+}
+
+button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    color: #fff;
+    background-color: #3b82f6;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #2563eb;
 }
 </style>

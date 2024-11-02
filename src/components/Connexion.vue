@@ -8,15 +8,28 @@
 <script setup>
 import { auth } from '../firebaseConfig';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { collection, query, where, getDocs, deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 
 const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-        await signInWithPopup(auth, provider);
-        alert("Connexion réussie !");
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        // Ajouter un document utilisateur si ce n'est pas déjà fait
+        const userRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userRef);
+        if (!userDoc.exists()) {
+            // Créer un nouveau document pour cet utilisateur
+            await setDoc(userRef, {
+                role: 'client',  // Par exemple, définir un rôle par défaut
+                displayName: user.displayName,
+                email: user.email
+            });
+            console.log("Nouveau document utilisateur créé !");
+        }
     } catch (error) {
-        console.error("Erreur lors de l'authentification :", error);
-        alert("Erreur lors de l'authentification. Veuillez réessayer.");
+        console.error("Erreur d'authentification:", error);
     }
 };
 </script>

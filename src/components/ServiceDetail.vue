@@ -5,7 +5,6 @@
             <div class="hero-content">
                 <h1 class="welcome">Bienvenue au centre d'esthétique</h1>
                 <h1 class="title">Izzy Beauty</h1>
-                <h1 class="title">- {{ service.title }} -</h1>
             </div>
             <i class="fas fa-user profile-icon" @click="goToProfile"></i>
             <!-- Home Icon -->
