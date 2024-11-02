@@ -247,7 +247,6 @@ const cancelAppointment = async (appointment) => {
 
 .main-container {
     min-height: 100vh;
-    min-width: 993px;
     display: flex;
     flex-direction: column;
     align-items: center;
