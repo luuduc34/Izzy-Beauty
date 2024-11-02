@@ -261,7 +261,6 @@ const cancelAppointment = async (appointment) => {
 
 .login-container {
     min-height: 100vh;
-    min-width: 993px;
     display: flex;
     flex-direction: column;
     align-items: center;
