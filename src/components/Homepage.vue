@@ -9,9 +9,16 @@
             <i class="fas fa-user profile-icon" @click="goToProfile"></i>
             <font-awesome-icon icon="home" class="home-icon" />
         </section>
+        <div class="align-right">
+            <button v-if="!userIsAuthenticated" class="connect-button" @click="goToConnexion">Se Connecter</button>
+        </div>
 
-        <!-- Connexion Google Section -->
-        <Connexion v-if="!userIsAuthenticated" />
+        <!-- Modal for Connexion Section -->
+        <div v-if="showConnexionForm" class="modal-overlay" @click.self="closeConnexion">
+            <div class="modal-content">
+                <Connexion @close="closeConnexion" />
+            </div>
+        </div>
 
         <!-- Services Section -->
         <Services />
@@ -31,36 +38,46 @@
 import { useRoute } from 'vue-router';
 import { useRouter } from 'vue-router';
 import { auth } from '../firebaseConfig';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { onAuthStateChanged } from 'firebase/auth';
 
 import AboutUs from "./AboutUs.vue";
 import Testimonials from "./Testimonials.vue";
 import Services from "./Services.vue";
 import Contact from "./Contact.vue";
-import Profile from "./Profile.vue";
 import Connexion from "./Connexion.vue";
 
 const route = useRoute();
 const router = useRouter();
 
 const userIsAuthenticated = ref(false);
+const showConnexionForm = ref(false); // Pour montrer ou cacher le formulaire de connexion
 
 onMounted(() => {
     onAuthStateChanged(auth, (user) => {
         userIsAuthenticated.value = !!user;
+        if (user) {
+            closeConnexion(); // Ferme le popup si l'utilisateur est connecté
+        }
     });
 });
+
+const goToConnexion = () => {
+    showConnexionForm.value = true; // Afficher le popup de Connexion
+};
+
+const closeConnexion = () => {
+    showConnexionForm.value = false; // Fermer le popup de Connexion
+};
 
 const goToProfile = () => {
     if (auth.currentUser) {
         router.push('/profile');
     } else {
         alert("Vous devez être connecté pour accéder à votre profil.");
-        router.push('/');
+        goToConnexion();
     }
 };
-
 </script>
 
 <style scoped>
@@ -75,9 +92,14 @@ const goToProfile = () => {
     background-color: #f7fafc;
 }
 
+.align-right {
+    text-align: right;
+    margin-left: auto;
+    margin-right: 1rem;
+}
+
 .hero-section {
     position: relative;
-    /* Nécessaire pour positionner l'icône */
     width: 100%;
     height: 24rem;
     background: url('../assets/spa-hero.jpg') center center / cover no-repeat;
@@ -91,6 +113,22 @@ const goToProfile = () => {
     background: rgba(0, 0, 0, 0.3);
     padding: 2rem;
     border-radius: 1rem;
+}
+
+.connect-button {
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    color: #fff;
+    background-color: #3b82f6;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.connect-button:hover {
+    background-color: #2563eb;
 }
 
 .welcome {
@@ -142,5 +180,27 @@ const goToProfile = () => {
 
 .profile-icon:hover {
     background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 </style>

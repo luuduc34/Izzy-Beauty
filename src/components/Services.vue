@@ -130,6 +130,7 @@ const services = [
     font-style: normal;
     margin-bottom: 1.5rem;
     text-align: center;
+    color: #555;
 }
 
 .services-grid {
@@ -166,6 +167,7 @@ const services = [
     font-size: 1.25rem;
     font-weight: 600;
     margin-top: 1rem;
+    color: #555;
 }
 
 .service-item p {

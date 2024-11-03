@@ -21,6 +21,9 @@
     width: 90%;
     max-width: 80rem;
     margin-top: 3rem;
+    padding-bottom: 1rem;
+    background-color: #ebf8ff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .about-section h2 {
@@ -30,13 +33,13 @@
     font-style: normal;
     margin-bottom: 1.5rem;
     text-align: center;
+    color: #555;
 }
 
 .about-content {
     display: flex;
     justify-content: center;
     padding: 1rem;
-    background-color: #f0f4f8;
 }
 
 .about-content p {

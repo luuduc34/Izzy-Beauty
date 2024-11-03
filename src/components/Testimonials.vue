@@ -36,6 +36,7 @@
     font-style: normal;
     margin-bottom: 1.5rem;
     text-align: center;
+    color: #555;
 }
 
 .testimonials-content {

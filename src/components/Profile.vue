@@ -18,20 +18,37 @@
         </section>
 
         <!-- Employee Section -->
-        <section class="appointments-section">
-            <div v-if="userRole === 'employee'">
-                <!-- Interface pour les employés -->
-                <div class="availability-container">
-                    <h2>Encoder vos disponibilités</h2>
-                    <Datepicker v-model="selectedDate" :min-date="minDate" :show-time="true"
-                        :time-steps="{ hours: 1 }" />
-                    <select v-model="selectedService">
-                        <option v-for="service in services" :key="service.title" :value="service.title">
-                            {{ service.title }}
-                        </option>
+        <section class="appointments-section" v-if="userRole === 'employee'">
+            <div class="availability-container">
+                <h2>Encoder vos disponibilités</h2>
+                <div class="date-hour-selection">
+                    <label for="datePicker">Sélectionner une date:</label>
+                    <input v-model="selectedDate" id="datePicker" type="date" :min="minDate" />
+
+                    <label for="hourPicker">Sélectionner une heure:</label>
+                    <select v-model="selectedHour" id="hourPicker">
+                        <option v-for="hour in availableHours" :key="hour" :value="hour">{{ hour }}:00</option>
                     </select>
-                    <button @click="saveAvailability">Enregistrer la disponibilité</button>
                 </div>
+                <label>Sélectionner un soin:</label>
+                <select v-model="selectedService">
+                    <option v-for="service in services" :key="service.title" :value="service.title">
+                        {{ service.title }}
+                    </option>
+                </select>
+                <button @click="addAvailability">Ajouter le créneau</button>
+
+                <div v-if="availabilityList.length > 0" class="availability-list">
+                    <h3>Vos Disponibilités:</h3>
+                    <ul>
+                        <li v-for="(availability, index) in availabilityList" :key="index">
+                            {{ availability.service }} - {{ availability.date }} à {{ availability.hour }}:00
+                            <button @click="removeAvailability(index)" class="cancel-button">Supprimer</button>
+                        </li>
+                    </ul>
+                </div>
+
+                <button @click="saveAvailabilities">Enregistrer les disponibilités</button>
             </div>
         </section>
 
@@ -42,7 +59,7 @@
                 <div v-for="appointment in appointments" :key="appointment.id" class="appointment-item">
                     <h3>{{ appointment.serviceTitle }}</h3>
                     <p>Type de soin : {{ appointment.type }}</p>
-                    <p>Date : {{ formatDate(appointment.date) }}</p>
+                    <p>Date : {{ formatDate(appointment.date) }} à {{ appointment.hour }}h</p>
                     <button @click="cancelAppointment(appointment)" class="cancel-button">Annuler le
                         rendez-vous</button>
                 </div>
@@ -74,7 +91,7 @@ import { auth } from '../firebaseConfig';
 import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'vue-router';
 import { db } from '../firebaseConfig'; // Import Firestore
-import { collection, query, where, getDocs, deleteDoc, doc, getDoc, setDoc, addDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, deleteDoc, updateDoc, doc, getDoc, setDoc, addDoc } from 'firebase/firestore';
 import Datepicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 
@@ -84,30 +101,79 @@ const router = useRouter();
 const userRole = ref('');
 const user = ref(null);
 const appointments = ref([]);
-const selectedDate = ref(null);
-const selectedService = ref('');
+const selectedDate = ref(null); // Date sélectionnée
+const selectedHour = ref(9);  // Heure sélectionnée
 const services = [
     { title: 'Soin du Visage' },
     { title: 'Massages Relaxants' },
     { title: 'Manucure et Pédicure' }
 ];
-const minDate = new Date();
+const selectedService = ref(services[0].title);
+const minDate = new Date().toISOString().split('T')[0]; // Date minimum (aujourd'hui)
+const availabilityList = ref([]);
 
-const saveAvailability = async () => {
-    if (!selectedDate.value || !selectedService.value) {
-        alert("Veuillez sélectionner une date et un service.");
+// Générer une liste d'heures disponibles entre 9h et 17h
+const availableHours = [];
+for (let i = 9; i < 17; i++) {
+    availableHours.push(i);
+}
+
+// Ajouter une disponibilité à la liste
+const addAvailability = () => {
+    if (!selectedDate.value || !selectedHour.value || !selectedService.value) {
+        alert("Veuillez sélectionner une date, une heure et un service.");
         return;
     }
+    availabilityList.value.push({
+        service: selectedService.value,
+        date: selectedDate.value,
+        hour: selectedHour.value
+    });
+    selectedHour.value = '';
+    selectedService.value = '';
+};
 
+// Supprimer une disponibilité de la liste
+const removeAvailability = (index) => {
+    availabilityList.value.splice(index, 1);
+};
+
+// Enregistrer les disponibilités dans la base de données
+const saveAvailabilities = async () => {
+    if (availabilityList.value.length === 0) {
+        alert("Veuillez ajouter au moins une disponibilité.");
+        return;
+    }
     try {
-        await addDoc(collection(db, 'availabilities'), {
-            employeeId: auth.currentUser.uid,
-            date: selectedDate.value,
-            service: selectedService.value
-        });
-        alert('Disponibilité enregistrée avec succès!');
+        for (const availability of availabilityList.value) {
+            // Vérifier si la disponibilité existe déjà
+            const availabilityQuery = query(
+                collection(db, 'availabilities'),
+                where('employeeId', '==', user.value.uid),
+                where('date', '==', availability.date),
+                where('hour', '==', availability.hour),
+                where('service', '==', availability.service)
+            );
+            const querySnapshot = await getDocs(availabilityQuery);
+
+            if (!querySnapshot.empty) {
+                alert(`Le créneau du ${availability.date} à ${availability.hour}:00 pour ${availability.service} existe déjà.`);
+                continue;
+            }
+
+            // Ajouter la disponibilité si elle n'existe pas
+            await addDoc(collection(db, 'availabilities'), {
+                booked: false,
+                employeeId: user.value.uid,
+                date: availability.date,
+                hour: availability.hour,
+                service: availability.service
+            });
+        }
+        alert('Disponibilités enregistrées avec succès!');
+        availabilityList.value = []; // Réinitialiser la liste après l'enregistrement
     } catch (error) {
-        console.error('Erreur lors de l\'enregistrement:', error);
+        console.error('Erreur lors de l\'enregistrement des disponibilités:', error);
         alert("Erreur lors de l'enregistrement. Veuillez réessayer.");
     }
 };
@@ -185,20 +251,19 @@ const fetchAppointments = async () => {
     }
 };
 
-// Fonction pour formater la date
-const formatDate = (timestamp) => {
-    const date = new Date(timestamp.seconds * 1000);
-    return date.toLocaleDateString('fr-FR', {
+// Formater la date
+const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('fr-FR', {
+        weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric',
     });
 };
 
-// Fonction pour annuler un rendez-vous
 const cancelAppointment = async (appointment) => {
     // Formatage du jour, de la date et de l'heure
-    const appointmentDateObject = new Date(appointment.date.seconds * 1000);
+    const appointmentDateObject = new Date(appointment.date + "T00:00:00");
     const appointmentDay = appointmentDateObject.toLocaleDateString('fr-FR', {
         weekday: 'long',
     });
@@ -207,10 +272,7 @@ const cancelAppointment = async (appointment) => {
         month: '2-digit',
         year: 'numeric',
     });
-    const appointmentTime = appointmentDateObject.toLocaleTimeString('fr-FR', {
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+    const appointmentTime = `${appointment.hour}:00`;
 
     // Demander une confirmation avant d'annuler le rendez-vous
     const confirmationMessage = `Êtes-vous sûr de vouloir annuler le rendez-vous pour ${appointment.serviceTitle} (${appointment.type}) prévu le ${appointmentDay} ${appointmentDate} à ${appointmentTime} ?`;
@@ -220,24 +282,42 @@ const cancelAppointment = async (appointment) => {
         return; // Si l'utilisateur annule, ne continuez pas
     }
 
-    const now = new Date();
-    const appointmentDateTime = new Date(appointment.date.seconds * 1000);
+    try {
+        // Supprimer le rendez-vous de la collection 'bookings'
+        await deleteDoc(doc(db, 'bookings', appointment.id));
+        alert("Le rendez-vous a été annulé avec succès.");
 
-    // Vérifier si le rendez-vous est annulable (plus de 24 heures avant le rendez-vous)
-    if (appointmentDateTime.getTime() - now.getTime() > 24 * 60 * 60 * 1000) {
-        try {
-            await deleteDoc(doc(db, 'bookings', appointment.id));
-            alert("Le rendez-vous a été annulé avec succès.");
-            // Mettre à jour la liste des rendez-vous après l'annulation
-            appointments.value = appointments.value.filter(a => a.id !== appointment.id);
-        } catch (error) {
-            console.error("Erreur lors de l'annulation du rendez-vous :", error);
-            alert("Une erreur s'est produite lors de l'annulation. Veuillez réessayer.");
+        // Mettre à jour la liste des rendez-vous après l'annulation
+        appointments.value = appointments.value.filter(a => a.id !== appointment.id);
+
+        // Rechercher la disponibilité correspondante dans 'availabilities'
+        const availabilityQuery = query(
+            collection(db, 'availabilities'),
+            where('employeeId', '==', appointment.userId), // 'userId' correspond à 'employeeId' dans 'availabilities'
+            where('date', '==', appointment.date), // Date en format string
+            where('hour', '==', appointment.hour), // Heure en format number
+            where('service', '==', appointment.serviceTitle) // 'serviceTitle' correspond à 'service'
+        );
+
+        const querySnapshot = await getDocs(availabilityQuery);
+
+        if (!querySnapshot.empty) {
+            console.log("Disponibilité trouvée. Mise à jour...");
+            const availabilityDoc = querySnapshot.docs[0];
+            await updateDoc(doc(db, 'availabilities', availabilityDoc.id), {
+                booked: false
+            });
+            console.log("La disponibilité a été mise à jour.");
+        } else {
+            console.log("Aucune disponibilité trouvée correspondant au rendez-vous annulé.");
         }
-    } else {
-        alert("Attention, il est trop tard pour annuler ce rendez-vous.");
+
+    } catch (error) {
+        console.error("Erreur lors de l'annulation du rendez-vous :", error);
+        alert("Une erreur s'est produite lors de l'annulation. Veuillez réessayer.");
     }
 };
+
 
 </script>
 
@@ -254,9 +334,74 @@ const cancelAppointment = async (appointment) => {
 }
 
 .availability-container {
-    max-width: 600px;
-    margin: auto;
+    max-width: 400px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #ffffff;
     text-align: center;
+}
+
+.date-hour-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+input[type="date"],
+select {
+    width: 100%;
+    max-width: 300px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    transition: border-color 0.3s;
+    font-size: 16px;
+    color: #555;
+}
+
+input[type="date"]:focus,
+select:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+button {
+    width: 100%;
+    max-width: 300px;
+    padding: 10px;
+    font-size: 1.125rem;
+    color: #ffffff;
+    background-color: #3b82f6;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #2563eb;
+}
+
+button:disabled {
+    background-color: #bbb;
+    cursor: not-allowed;
+}
+
+h2 {
+    margin-bottom: 10px;
+    color: #333;
+    font-family: "Cookie", cursive;
+    font-weight: 400;
+    font-size: 2.5rem;
+    font-style: normal;
 }
 
 .login-container {
@@ -400,18 +545,19 @@ const cancelAppointment = async (appointment) => {
     background-color: rgba(0, 0, 0, 0.8);
 }
 
-button {
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    color: #fff;
-    background-color: #3b82f6;
-    border: none;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+.availability-list {
+    text-align: left;
 }
 
-button:hover {
-    background-color: #2563eb;
+.availability-list ul {
+    list-style: none;
+    padding: 0;
+}
+
+.availability-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
 }
 </style>

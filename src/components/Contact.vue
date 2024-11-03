@@ -58,6 +58,7 @@ const handleSubmit = () => {
     font-style: normal;
     margin-bottom: 1.5rem;
     text-align: center;
+    color: #555;
 }
 
 .contact-content {
@@ -66,7 +67,7 @@ const handleSubmit = () => {
 
 .contact-content p {
     font-size: 1.125rem;
-    color: #4a5568;
+    color: #555;
 }
 
 .contact-info {
@@ -95,6 +96,7 @@ label {
     font-size: 1rem;
     font-weight: bold;
     margin-bottom: 0.5rem;
+    color: #555;
 }
 
 input,
@@ -104,6 +106,7 @@ textarea {
     border: 1px solid #cbd5e0;
     width: 100%;
     font-size: 1rem;
+    color: #555;
 }
 
 .submit-button {

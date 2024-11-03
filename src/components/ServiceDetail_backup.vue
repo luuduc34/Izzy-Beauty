@@ -23,23 +23,13 @@
                         {{ type.name }}
                     </option>
                 </select>
-
-                <!-- Créneaux Disponibles Section -->
-                <div v-if="userIsAuthenticated" class="available-slots-container">
-                    <label for="slot-picker">Choisissez un créneau disponible :</label>
-                    <div v-if="availableSlots.length > 0" class="available-slots-container">
-                        <select v-model="selectedSlot" id="slot-picker" class="slot-picker">
-                            <option v-for="slot in availableSlots" :key="slot.id" :value="slot">
-                                {{ formatSlot(slot) }}
-                            </option>
-                        </select>
-                        <button @click="bookService" class="book-button" :disabled="!selectedType || !selectedSlot">
-                            Réserver ce créneau
-                        </button>
-                    </div>
-                    <div v-else>
-                        <p>Aucun créneau disponible.</p>
-                    </div>
+                <!-- Datepicker Section -->
+                <div v-if="userIsAuthenticated" class="datepicker-container">
+                    <label for="date-picker">Choisissez une date pour ce service :</label>
+                    <Datepicker v-model="selectedDate" id="date-picker" class="custom-datepicker" />
+                    <button @click="bookService" class="book-button" :disabled="!selectedType || !selectedDate">
+                        Réserver cette date
+                    </button>
                 </div>
             </div>
             <div v-else class="service-detail">
@@ -58,7 +48,6 @@
     </div>
 </template>
 
-
 <script setup>
 import facialImage from '@/assets/facial.jpg';
 import massageImage from '@/assets/massage.jpg';
@@ -70,7 +59,9 @@ import { useRouter } from 'vue-router';
 import { auth } from '../firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db } from '../firebaseConfig'; // Import Firestore
-import { collection, getDocs, updateDoc, addDoc, query, where, doc } from 'firebase/firestore'; // Import Firestore methods
+import { collection, addDoc } from 'firebase/firestore'; // Import Firestore methods
+import Datepicker from '@vuepic/vue-datepicker'; // Import Datepicker
+import '@vuepic/vue-datepicker/dist/main.css'; // Import default CSS for Datepicker
 
 import AboutUs from "./AboutUs.vue";
 import Testimonials from "./Testimonials.vue";
@@ -96,9 +87,8 @@ const goToProfile = () => {
 const route = useRoute();
 const router = useRouter();
 const service = ref({});
+const selectedDate = ref(null);
 const selectedType = ref("");
-const selectedSlot = ref(null);
-const availableSlots = ref([]);
 
 const services = [
     {
@@ -145,38 +135,21 @@ const services = [
 onMounted(() => {
     const serviceId = route.params.id;
     service.value = services[serviceId];
-    fetchAvailableSlots();
 });
-
-// Récupérer les créneaux disponibles depuis la base de données
-const fetchAvailableSlots = async () => {
-    try {
-        const availabilityQuery = query(
-            collection(db, 'availabilities'),
-            where('service', '==', service.value.title)
-        );
-        const querySnapshot = await getDocs(availabilityQuery);
-        availableSlots.value = querySnapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(slot => slot.booked !== true); // Ne montrer que les créneaux non réservés
-    } catch (error) {
-        console.error('Erreur lors de la récupération des créneaux disponibles:', error);
-    }
-};
 
 const goToHomepage = () => {
     router.push('/');
 };
 
-// Réserver le créneau choisi
+// Fonction pour réserver le service avec la date et le type de soin sélectionné
 const bookService = async () => {
     if (!selectedType.value) {
         alert("Veuillez sélectionner un type de soin.");
         return;
     }
 
-    if (!selectedSlot.value) {
-        alert("Veuillez sélectionner un créneau disponible.");
+    if (!selectedDate.value) {
+        alert("Veuillez sélectionner une date.");
         return;
     }
 
@@ -187,17 +160,9 @@ const bookService = async () => {
                 serviceTitle: service.value.title,
                 type: selectedType.value,
                 serviceId: route.params.id,
-                date: selectedSlot.value.date,
-                hour: selectedSlot.value.hour,
+                date: selectedDate.value,
             });
-
-            // Marquer le créneau comme réservé
-            await updateDoc(doc(db, 'availabilities', selectedSlot.value.id), {
-                booked: true
-            });
-
             alert("Réservation effectuée avec succès !");
-            fetchAvailableSlots(); // Mettre à jour les créneaux disponibles
         } catch (error) {
             console.error("Erreur lors de la réservation :", error);
             alert("Une erreur s'est produite lors de la réservation. Veuillez réessayer.");
@@ -205,11 +170,6 @@ const bookService = async () => {
     } else {
         alert("Vous devez être connecté pour réserver.");
     }
-};
-
-// Formater le créneau pour l'affichage
-const formatSlot = (slot) => {
-    return `${slot.date} à ${slot.hour}:00`;
 };
 </script>
 
@@ -290,7 +250,6 @@ const formatSlot = (slot) => {
     font-style: normal;
     margin-bottom: 1.5rem;
     text-align: center;
-    color: #555;
 }
 
 .service-detail p {
@@ -346,13 +305,6 @@ const formatSlot = (slot) => {
     margin: 1rem 0;
 }
 
-.available-slots-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color: #555;
-}
-
 .book-button {
     padding: 0.75rem 1.5rem;
     margin-top: 1rem;
@@ -377,6 +329,5 @@ const formatSlot = (slot) => {
     font-size: 1rem;
     border-radius: 0.5rem;
     border: 1px solid #cbd5e0;
-    color: #555;
 }
 </style>
