@@ -189,6 +189,7 @@ const bookService = async () => {
                 serviceId: route.params.id,
                 date: selectedSlot.value.date,
                 hour: selectedSlot.value.hour,
+                employeeId: selectedSlot.value.employeeId
             });
 
             // Marquer le créneau comme réservé
@@ -347,20 +348,33 @@ const formatSlot = (slot) => {
 }
 
 .available-slots-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    max-width: 300px;
+    margin: auto;
+    background-color: #ffffff;
+    text-align: center;
+}
+
+.available-slots-container label {
     color: #555;
 }
 
+.slot-picker {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border-radius: 5px;
+    border: 1px solid #cbd5e0;
+    margin-bottom: 1rem;
+}
+
 .book-button {
+    width: 100%;
     padding: 0.75rem 1.5rem;
-    margin-top: 1rem;
     font-size: 1.125rem;
     color: #ffffff;
     background-color: #3b82f6;
     border: none;
-    border-radius: 0.5rem;
+    border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }

@@ -21,6 +21,7 @@
     width: 90%;
     max-width: 80rem;
     margin-top: 3rem;
+    padding-top: 2rem;
     padding-bottom: 1rem;
     background-color: #ebf8ff;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);

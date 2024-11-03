@@ -1,5 +1,6 @@
 <template>
     <div v-if="user" class="main-container">
+        <div class="fantome"></div>
         <!-- Hero Section -->
         <section class="hero-section">
             <div class="hero-content" @click="goToHomepage">
@@ -72,6 +73,7 @@
         <Contact />
     </div>
     <div v-else class="login-container">
+        <div class="fantome"></div>
         <!-- Hero Section -->
         <section class="hero-section">
             <div class="hero-content">
@@ -293,21 +295,21 @@ const cancelAppointment = async (appointment) => {
         // Rechercher la disponibilité correspondante dans 'availabilities'
         const availabilityQuery = query(
             collection(db, 'availabilities'),
-            where('employeeId', '==', appointment.userId), // 'userId' correspond à 'employeeId' dans 'availabilities'
+            where('employeeId', '==', appointment.employeeId), // 'userId' correspond à 'employeeId' dans 'availabilities'
             where('date', '==', appointment.date), // Date en format string
             where('hour', '==', appointment.hour), // Heure en format number
             where('service', '==', appointment.serviceTitle) // 'serviceTitle' correspond à 'service'
         );
 
         const querySnapshot = await getDocs(availabilityQuery);
-
+        console.log(appointment);
         if (!querySnapshot.empty) {
             console.log("Disponibilité trouvée. Mise à jour...");
             const availabilityDoc = querySnapshot.docs[0];
             await updateDoc(doc(db, 'availabilities', availabilityDoc.id), {
                 booked: false
             });
-            console.log("La disponibilité a été mise à jour.");
+            console.log("La disponibilité a été mise à jour pour refléter l'annulation.");
         } else {
             console.log("Aucune disponibilité trouvée correspondant au rendez-vous annulé.");
         }
@@ -317,7 +319,6 @@ const cancelAppointment = async (appointment) => {
         alert("Une erreur s'est produite lors de l'annulation. Veuillez réessayer.");
     }
 };
-
 
 </script>
 
@@ -331,6 +332,11 @@ const cancelAppointment = async (appointment) => {
     flex-direction: column;
     align-items: center;
     background-color: #f7fafc;
+}
+
+.fantome {
+    width: 990px;
+
 }
 
 .availability-container {
