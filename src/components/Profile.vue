@@ -98,7 +98,7 @@
         </div>
     </div>
 
-    <div v-else class="login-container">
+    <div v-else class="login-container" v-if="!userIsAuthenticated">
         <div class="fantome"></div>
         <!-- Hero Section -->
         <section class="hero-section">
@@ -109,7 +109,7 @@
             <font-awesome-icon icon="home" class="home-icon" @click="goToHomepage" />
         </section>
         <p>Connectez-vous pour accéder à votre profil</p>
-        <button v-if="!userIsAuthenticated" class="connect-button" @click="goToConnexion">Se Connecter</button>
+        <button class="connect-button" @click="goToConnexion">Se Connecter</button>
     </div>
     <div v-if="showConnexionForm" class="modal-overlay" @click.self="closeConnexion">
         <div class="modal-content">
