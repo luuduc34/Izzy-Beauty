@@ -82,7 +82,7 @@
             <!-- Home Icon -->
             <font-awesome-icon icon="home" class="home-icon" @click="goToHomepage" />
         </section>
-        <h2>Connectez-vous pour accéder à votre profil</h2>
+        <p>Connectez-vous pour accéder à votre profil</p>
         <button @click="signInWithGoogle">Se Connecter avec Google</button>
     </div>
 </template>
