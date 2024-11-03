@@ -33,7 +33,7 @@
                                 {{ formatSlot(slot) }}
                             </option>
                         </select>
-                        <button @click="bookService" class="book-button" :disabled="!selectedType || !selectedSlot">
+                        <button @click="bookService" class="book-button">
                             Réserver ce créneau
                         </button>
                     </div>

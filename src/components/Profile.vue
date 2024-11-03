@@ -16,9 +16,27 @@
             <h1 class="welcome">Bonjour, {{ user.displayName }}</h1>
             <img :src="user.photoURL" alt="Profile Picture" class="profile-picture" />
             <button @click="logout" class="profile-button">Se Déconnecter</button>
+            <button @click="showReviewForm = true" class="review-button">Laisser un avis</button>
         </section>
 
         <!-- Employee Section -->
+
+        <!-- Afficher les disponibilités -->
+        <section class="availabilities-section" v-if="userRole === 'employee'">
+            <h2>Vos Disponibilités</h2>
+            <div v-if="availabilities.length > 0" class="availabilities-list">
+                <ul>
+                    <li v-for="availability in availabilities" :key="availability.id">
+                        {{ availability.service }} - {{ availability.date }} à {{ availability.hour }}:00
+                        <button @click="removeAvailabilityFromDB(availability)" class="cancel-button">Supprimer</button>
+                    </li>
+                </ul>
+            </div>
+            <div v-else>
+                <p>Vous n'avez pas encore de disponibilités enregistrées.</p>
+            </div>
+        </section>
+        <!-- Ajouter des disponibilités -->
         <section class="appointments-section" v-if="userRole === 'employee'">
             <div class="availability-container">
                 <h2>Encoder vos disponibilités</h2>
@@ -72,6 +90,14 @@
 
         <Contact />
     </div>
+
+    <!-- Modal pour laisser un avis -->
+    <div v-if="showReviewForm" class="modal-overlay" @click.self="closeReviewModal">
+        <div class="modal-content">
+            <Avis @close="closeReviewModal" /> <!-- Composant Avis.vue pour laisser un avis -->
+        </div>
+    </div>
+
     <div v-else class="login-container">
         <div class="fantome"></div>
         <!-- Hero Section -->
@@ -104,6 +130,7 @@ import '@vuepic/vue-datepicker/dist/main.css';
 
 import Contact from "./Contact.vue";
 import Connexion from "./Connexion.vue";
+import Avis from "./Avis.vue";
 
 const router = useRouter();
 const userRole = ref('');
@@ -121,6 +148,68 @@ const minDate = new Date().toISOString().split('T')[0]; // Date minimum (aujourd
 const availabilityList = ref([]);
 const userIsAuthenticated = ref(false);
 const showConnexionForm = ref(false); // Pour montrer ou cacher le formulaire de connexion
+const availabilities = ref([]); // Pour récupérer toutes les disponibilités de l'employé
+const showReviewForm = ref(false); // Variable pour montrer ou cacher la modal Avis
+
+onMounted(() => {
+    onAuthStateChanged(auth, (user) => {
+        userIsAuthenticated.value = !!user;
+        if (user) {
+            closeConnexion(); // Ferme le popup si l'utilisateur est connecté
+        }
+    });
+});
+
+// Observer l'état d'authentification
+onAuthStateChanged(auth, async (currentUser) => {
+    user.value = currentUser;
+    if (user.value) {
+        await fetchAppointments();
+        await fetchAvailabilities();  // Appel de la fonction pour récupérer les disponibilités
+
+        try {
+            const userRef = doc(db, 'users', user.value.uid);
+            const userDoc = await getDoc(userRef);
+            if (userDoc.exists()) {
+                userRole.value = userDoc.data().role; // Récupérer le rôle de l'utilisateur
+            } else {
+                console.error("Utilisateur non trouvé.");
+            }
+        } catch (error) {
+            console.error("Erreur lors de la récupération du rôle de l'utilisateur :", error);
+        }
+    }
+});
+
+// Fonction pour récupérer les disponibilités de l'utilisateur
+const fetchAvailabilities = async () => {
+    if (user.value) {
+        const availabilitiesRef = collection(db, 'availabilities');
+        const q = query(availabilitiesRef, where('employeeId', '==', user.value.uid));
+        try {
+            const querySnapshot = await getDocs(q);
+            availabilities.value = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+        } catch (error) {
+            console.error("Erreur lors de la récupération des disponibilités :", error);
+        }
+    }
+};
+
+// Supprimer une disponibilité de la base de données
+const removeAvailabilityFromDB = async (availability) => {
+    try {
+        await deleteDoc(doc(db, 'availabilities', availability.id));
+        availabilities.value = availabilities.value.filter(avail => avail.id !== availability.id);
+        alert("La disponibilité a été supprimée avec succès.");
+    } catch (error) {
+        console.error("Erreur lors de la suppression de la disponibilité :", error);
+        alert("Une erreur s'est produite lors de la suppression. Veuillez réessayer.");
+    }
+};
+
 
 // Générer une liste d'heures disponibles entre 9h et 17h
 const availableHours = [];
@@ -187,34 +276,6 @@ const saveAvailabilities = async () => {
         alert("Erreur lors de l'enregistrement. Veuillez réessayer.");
     }
 };
-
-onMounted(() => {
-    onAuthStateChanged(auth, (user) => {
-        userIsAuthenticated.value = !!user;
-        if (user) {
-            closeConnexion(); // Ferme le popup si l'utilisateur est connecté
-        }
-    });
-});
-
-// Observer l'état d'authentification
-onAuthStateChanged(auth, async (currentUser) => {
-    user.value = currentUser;
-    if (user.value) {
-        await fetchAppointments();
-        try {
-            const userRef = doc(db, 'users', user.value.uid);
-            const userDoc = await getDoc(userRef);
-            if (userDoc.exists()) {
-                userRole.value = userDoc.data().role; // Récupérer le rôle de l'utilisateur
-            } else {
-                console.error("Utilisateur non trouvé.");
-            }
-        } catch (error) {
-            console.error("Erreur lors de la récupération du rôle de l'utilisateur :", error);
-        }
-    }
-});
 
 const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -345,6 +406,11 @@ const cancelAppointment = async (appointment) => {
     }
 };
 
+// Fonction pour fermer la modal Avis
+const closeReviewModal = () => {
+    showReviewForm.value = false;
+};
+
 </script>
 
 <style scoped>
@@ -357,17 +423,16 @@ const cancelAppointment = async (appointment) => {
     flex-direction: column;
     align-items: center;
     background-color: #f7fafc;
+    color: #333;
 }
 
 .fantome {
     width: 990px;
-
 }
 
 .availability-container {
     max-width: 400px;
-    margin: 20px auto;
-    padding: 20px;
+    margin: auto;
     background-color: #ffffff;
     text-align: center;
 }
@@ -587,9 +652,35 @@ h2 {
 
 .availability-list li {
     display: flex;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.availabilities-section {
+    width: 90%;
+    padding: 2rem;
+    margin-top: 2rem;
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.availabilities-list {
+    margin-top: 1rem;
+    text-align: left;
+}
+
+.availabilities-list ul {
+    list-style: none;
+    padding: 0;
+}
+
+.availabilities-list li {
+    display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 0;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .modal-overlay {
@@ -612,5 +703,21 @@ h2 {
     max-width: 500px;
     width: 100%;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.review-button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.125rem;
+    color: #ffffff;
+    background-color: #3b82f6;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+}
+
+.review-button:hover {
+    background-color: #2563eb;
 }
 </style>

@@ -26,6 +26,8 @@
 
 <script setup>
 import { ref } from 'vue';
+import { db } from '../firebaseConfig'; // Importez votre configuration Firebase
+import { collection, addDoc } from 'firebase/firestore'; // Importer les fonctions nécessaires
 
 const form = ref({
     name: '',
@@ -33,12 +35,27 @@ const form = ref({
     message: ''
 });
 
-const handleSubmit = () => {
-    console.log('Formulaire soumis :', form.value);
-    alert('Merci pour votre message, nous vous contacterons prochainement !');
-    form.value = { name: '', email: '', message: '' };
+// Fonction pour gérer la soumission du formulaire
+const handleSubmit = async () => {
+    try {
+        // Ajouter le message du formulaire à Firestore
+        await addDoc(collection(db, 'contactMessages'), {
+            name: form.value.name,
+            email: form.value.email,
+            message: form.value.message,
+            timestamp: new Date() // Ajouter un horodatage pour l'ordre chronologique
+        });
+        alert('Merci pour votre message, nous vous contacterons prochainement !');
+
+        // Réinitialiser le formulaire
+        form.value = { name: '', email: '', message: '' };
+    } catch (error) {
+        console.error('Erreur lors de l\'envoi du formulaire :', error);
+        alert('Une erreur s\'est produite lors de l\'envoi. Veuillez réessayer.');
+    }
 };
 </script>
+
 
 <style scoped>
 .contact-section {

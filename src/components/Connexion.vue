@@ -126,6 +126,7 @@ const signUpWithEmail = async () => {
 <style scoped>
 .connexion-container {
     text-align: center;
+    color: #333;
 }
 
 .auth-form {

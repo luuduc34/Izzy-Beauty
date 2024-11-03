@@ -2,21 +2,39 @@
     <section class="testimonials-section">
         <h2>Ce que disent nos clients</h2>
         <div class="testimonials-content">
-            <div class="testimonial-item">
-                <p>“Excellent service, l'équipe est très professionnelle et les soins sont merveilleux !”</p>
-                <span>- Bryan S.</span>
-            </div>
-            <div class="testimonial-item">
-                <p>“Le meilleur centre d'esthétique, je me sens toujours détendu après
-                    chaque massage.”</p>
-                <span>- Claude V.</span>
+            <div v-for="testimonial in testimonials" :key="testimonial.id" class="testimonial-item">
+                <p>"{{ testimonial.review }}"</p>
+                <span>- {{ testimonial.userName }}</span>
             </div>
         </div>
     </section>
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue';
+import { db } from '../firebaseConfig'; // Import Firestore
+import { collection, getDocs } from 'firebase/firestore';
 
+// Référence pour stocker les avis
+const testimonials = ref([]);
+
+// Fonction pour récupérer les avis de Firestore
+const fetchTestimonials = async () => {
+    try {
+        const querySnapshot = await getDocs(collection(db, 'testimonials'));
+        testimonials.value = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    } catch (error) {
+        console.error('Erreur lors de la récupération des avis :', error);
+    }
+};
+
+// Récupérer les avis au montage du composant
+onMounted(() => {
+    fetchTestimonials();
+});
 </script>
 
 <style scoped>
