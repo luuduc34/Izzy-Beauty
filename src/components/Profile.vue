@@ -83,7 +83,12 @@
             <font-awesome-icon icon="home" class="home-icon" @click="goToHomepage" />
         </section>
         <p>Connectez-vous pour accéder à votre profil</p>
-        <button @click="signInWithGoogle">Se Connecter avec Google</button>
+        <button v-if="!userIsAuthenticated" class="connect-button" @click="goToConnexion">Se Connecter</button>
+    </div>
+    <div v-if="showConnexionForm" class="modal-overlay" @click.self="closeConnexion">
+        <div class="modal-content">
+            <Connexion @close="closeConnexion" />
+        </div>
     </div>
 </template>
 
@@ -98,6 +103,7 @@ import Datepicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 
 import Contact from "./Contact.vue";
+import Connexion from "./Connexion.vue";
 
 const router = useRouter();
 const userRole = ref('');
@@ -113,6 +119,8 @@ const services = [
 const selectedService = ref(services[0].title);
 const minDate = new Date().toISOString().split('T')[0]; // Date minimum (aujourd'hui)
 const availabilityList = ref([]);
+const userIsAuthenticated = ref(false);
+const showConnexionForm = ref(false); // Pour montrer ou cacher le formulaire de connexion
 
 // Générer une liste d'heures disponibles entre 9h et 17h
 const availableHours = [];
@@ -180,6 +188,15 @@ const saveAvailabilities = async () => {
     }
 };
 
+onMounted(() => {
+    onAuthStateChanged(auth, (user) => {
+        userIsAuthenticated.value = !!user;
+        if (user) {
+            closeConnexion(); // Ferme le popup si l'utilisateur est connecté
+        }
+    });
+});
+
 // Observer l'état d'authentification
 onAuthStateChanged(auth, async (currentUser) => {
     user.value = currentUser;
@@ -229,6 +246,14 @@ const logout = async () => {
     } catch (error) {
         console.error("Erreur lors de la déconnexion:", error);
     }
+};
+
+const goToConnexion = () => {
+    showConnexionForm.value = true; // Afficher le popup de Connexion
+};
+
+const closeConnexion = () => {
+    showConnexionForm.value = false; // Fermer le popup de Connexion
 };
 
 // Rediriger vers la page d'accueil
@@ -565,5 +590,27 @@ h2 {
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 0;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 </style>

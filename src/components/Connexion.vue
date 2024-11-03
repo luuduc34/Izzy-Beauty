@@ -15,8 +15,8 @@
                 <h3>Se Connecter</h3>
                 <input v-model="email" type="email" placeholder="Adresse Email" />
                 <input v-model="password" type="password" placeholder="Mot de Passe" />
+                <p>Vous n'avez pas de compte ? <span @click="isSignUp = true">Créez-en un ici</span></p><br>
                 <button @click="signInWithEmail">Se Connecter</button>
-                <p>Vous n'avez pas de compte ? <span @click="isSignUp = true">Créez-en un ici</span></p>
             </div>
         </div>
         <br>
@@ -126,7 +126,6 @@ const signUpWithEmail = async () => {
 <style scoped>
 .connexion-container {
     text-align: center;
-    margin: 2rem 0;
 }
 
 .auth-form {

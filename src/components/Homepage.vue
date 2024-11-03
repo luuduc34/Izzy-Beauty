@@ -197,7 +197,7 @@ const goToProfile = () => {
 
 .modal-content {
     background-color: white;
-    padding: 2rem;
+    padding: 2rem 0;
     border-radius: 0.5rem;
     max-width: 500px;
     width: 100%;
