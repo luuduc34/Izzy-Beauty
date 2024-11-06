@@ -30,9 +30,13 @@
             <h2>Vos Disponibilités</h2>
             <div v-if="availabilities.length > 0" class="availabilities-list">
                 <ul>
-                    <li v-for="availability in availabilities" :key="availability.id">
+                    <li v-for="availability in availabilities" :key="availability.id"
+                        :class="['availability-item', { 'past-availability': isPastAvailability(availability.date, availability.hour) }]">
                         {{ availability.service }} - {{ availability.date }} à {{ availability.hour }}:00
-                        <button @click="removeAvailabilityFromDB(availability)" class="cancel-button">Supprimer</button>
+                        <button @click="removeAvailabilityFromDB(availability)" class="cancel-button"
+                            :disabled="isPastAvailability(availability.date, availability.hour)">
+                            Supprimer
+                        </button>
                     </li>
                 </ul>
             </div>
@@ -406,7 +410,6 @@ const cancelAppointment = async (appointment) => {
     }
 };
 
-
 // Fonction pour fermer la modal Avis
 const closeReviewModal = () => {
     showReviewForm.value = false;
@@ -416,6 +419,12 @@ const closeReviewModal = () => {
 const isPastAppointment = (date, hour) => {
     const appointmentDate = new Date(`${date}T${hour.toString().padStart(2, '0')}:00:00`);
     return appointmentDate < new Date();
+};
+
+// Fonction pour vérifier si une disponibilité est passée
+const isPastAvailability = (date, hour) => {
+    const availabilityDate = new Date(`${date}T${hour.toString().padStart(2, '0')}:00:00`);
+    return availabilityDate < new Date();
 };
 </script>
 
@@ -693,6 +702,20 @@ h2 {
     align-items: center;
     padding: 0.5rem 0;
     border-bottom: 1px solid #e2e8f0;
+}
+
+.availability-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e2e8f0;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.availability-item.past-availability {
+    background-color: #f1f1f1;
+    color: #9e9e9e;
 }
 
 .modal-overlay {
