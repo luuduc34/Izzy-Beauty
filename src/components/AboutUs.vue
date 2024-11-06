@@ -4,9 +4,11 @@
         <div class="about-content">
             <p>
                 Situé en plein cœur de la ville de Seraing, notre centre d'esthétique propose des soins haut de gamme
-                pour la
-                beauté et le bien-être. Notre équipe de professionnels vous offre un service personnalisé et à la
-                hauteur de vos attentes.
+                pour la beauté et le bien-être. Notre équipe de professionnels vous offre un service personnalisé et à
+                la hauteur de vos attentes.
+            </p>
+            <p class="hours">
+                <strong>Heures d'ouverture :</strong> Du lundi au samedi, de 9h à 17h.
             </p>
         </div>
     </section>
@@ -39,7 +41,8 @@
 
 .about-content {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
     padding: 1rem;
 }
 
@@ -48,5 +51,11 @@
     color: #4a5568;
     line-height: 1.8;
     max-width: 60rem;
+}
+
+.hours {
+    margin-top: 1rem;
+    font-size: 1.125rem;
+    color: #2b6cb0;
 }
 </style>

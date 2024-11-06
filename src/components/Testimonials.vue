@@ -1,6 +1,6 @@
 <template>
     <section class="testimonials-section">
-        <h2>Les avis de nos clients</h2>
+        <h2>Que disent nos clients ?</h2>
         <div v-if="testimonials.length > 0" class="testimonials-content">
             <div v-for="testimonial in testimonials" :key="testimonial.id" class="testimonial-item">
                 <p>"{{ testimonial.review }}"</p>

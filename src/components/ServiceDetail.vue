@@ -24,6 +24,11 @@
                     </option>
                 </select>
 
+                <!-- Description du soin sélectionné -->
+                <p v-if="selectedType" class="selected-type-description">
+                    {{ getSelectedTypeDescription(selectedType) }}
+                </p>
+
                 <!-- Créneaux Disponibles Section -->
                 <div v-if="userIsAuthenticated" class="available-slots-container">
                     <label for="slot-picker">Choisissez un créneau disponible :</label>
@@ -57,7 +62,6 @@
         <Contact />
     </div>
 </template>
-
 
 <script setup>
 import facialImage from '@/assets/facial.jpg';
@@ -105,48 +109,56 @@ const services = [
         image: facialImage,
         alt: 'Soin du visage pour raviver la jeunesse de la peau',
         title: 'Soin du Visage',
-        description: 'Nos soins du visage personnalisés pour raviver la jeunesse de votre peau.',
+        description: 'Nos soins du visage personnalisés pour raviver la jeunesse de votre peau. Chaque soin dure entre 30 et 60 minutes.',
         types: [
-            { name: 'Soin Hydratant', description: 'Un soin qui hydrate en profondeur pour restaurer la souplesse et l’éclat de la peau.' },
-            { name: 'Soin Anti-Âge', description: 'Réduit les rides et ridules pour une apparence plus jeune et lumineuse.' },
-            { name: 'Soin Purifiant', description: 'Nettoie en profondeur les pores et élimine les impuretés pour une peau nette.' },
-            { name: 'Soin Éclat', description: 'Ravive l’éclat de la peau et améliore le teint pour un effet lumineux.' },
-            { name: 'Soin Apaisant', description: 'Calme les rougeurs et les irritations pour les peaux sensibles.' }
+            { name: 'Soin Hydratant', description: 'Un soin qui hydrate en profondeur pour restaurer la souplesse et l’éclat de la peau. Durée : 45 minutes. Tarif : 60€.' },
+            { name: 'Soin Anti-Âge', description: 'Réduit les rides et ridules pour une apparence plus jeune et lumineuse. Durée : 60 minutes. Tarif : 75€.' },
+            { name: 'Soin Purifiant', description: 'Nettoie en profondeur les pores et élimine les impuretés pour une peau nette. Durée : 50 minutes. Tarif : 65€.' },
+            { name: 'Soin Éclat', description: 'Ravive l’éclat de la peau et améliore le teint pour un effet lumineux. Durée : 40 minutes. Tarif : 70€.' },
+            { name: 'Soin Apaisant', description: 'Calme les rougeurs et les irritations pour les peaux sensibles. Durée : 30 minutes. Tarif : 60€.' }
         ]
     },
     {
         image: massageImage,
         alt: 'Massage relaxant par un professionnel certifié',
         title: 'Massages Relaxants',
-        description: 'Détendez-vous avec nos massages de bien-être par des professionnels certifiés.',
+        description: 'Détendez-vous avec nos massages de bien-être par des professionnels certifiés. Chaque soin dure entre 30 et 60 minutes.',
         types: [
-            { name: 'Massage Suédois', description: 'Détend les muscles en profondeur et améliore la circulation sanguine.' },
-            { name: 'Massage aux Pierres Chaudes', description: 'Un massage doux utilisant des pierres volcaniques pour une relaxation totale.' },
-            { name: 'Massage Californien', description: 'Un massage enveloppant qui favorise une relaxation profonde du corps et de l’esprit.' },
-            { name: 'Massage des Tissus Profonds', description: 'Cible les couches profondes des muscles pour soulager les tensions.' },
-            { name: 'Réflexologie Plantaire', description: 'Massage des pieds stimulant des points précis pour améliorer la santé générale.' }
+            { name: 'Massage Suédois', description: 'Détend les muscles en profondeur et améliore la circulation sanguine. Durée : 60 minutes. Tarif : 80€.' },
+            { name: 'Massage aux Pierres Chaudes', description: 'Un massage doux utilisant des pierres volcaniques pour une relaxation totale. Durée : 50 minutes. Tarif : 90€.' },
+            { name: 'Massage Californien', description: 'Un massage enveloppant qui favorise une relaxation profonde du corps et de l’esprit. Durée : 45 minutes. Tarif : 85€.' },
+            { name: 'Massage des Tissus Profonds', description: 'Cible les couches profondes des muscles pour soulager les tensions. Durée : 55 minutes. Tarif : 95€.' },
+            { name: 'Réflexologie Plantaire', description: 'Massage des pieds stimulant des points précis pour améliorer la santé générale. Durée : 30 minutes. Tarif : 70€.' }
         ]
     },
     {
         image: manicureImage,
         alt: 'Manucure et pédicure pour une finition parfaite',
         title: 'Manucure et Pédicure',
-        description: 'Des soins esthétiques pour vos mains et pieds, pour une finition parfaite.',
+        description: 'Des soins esthétiques pour vos mains et pieds, pour une finition parfaite. Chaque soin dure entre 30 et 60 minutes.',
         types: [
-            { name: 'Manucure Classique', description: 'Limage, cuticules, et application de vernis pour des ongles soignés.' },
-            { name: 'Pédicure Spa', description: 'Un soin complet des pieds avec gommage, masque, et massage relaxant.' },
-            { name: 'Manucure Française', description: 'Finition élégante avec un bord blanc classique pour une apparence chic.' },
-            { name: 'Pose de Vernis Gel', description: 'Pose de vernis gel longue tenue pour une couleur éclatante pendant des semaines.' },
-            { name: 'Soin des Ongles au Parafin', description: 'Hydratation intense avec la chaleur de la paraffine pour des mains douces et souples.' }
+            { name: 'Manucure Classique', description: 'Limage, cuticules, et application de vernis pour des ongles soignés. Durée : 40 minutes. Tarif : 40€.' },
+            { name: 'Pédicure Spa', description: 'Un soin complet des pieds avec gommage, masque, et massage relaxant. Durée : 50 minutes. Tarif : 50€.' },
+            { name: 'Manucure Française', description: 'Finition élégante avec un bord blanc classique pour une apparence chic. Durée : 45 minutes. Tarif : 45€.' },
+            { name: 'Pose de Vernis Gel', description: 'Pose de vernis gel longue tenue pour une couleur éclatante pendant des semaines. Durée : 30 minutes. Tarif : 55€.' },
+            { name: 'Soin des Ongles au Parafin', description: 'Hydratation intense avec la chaleur de la paraffine pour des mains douces et souples. Durée : 35 minutes. Tarif : 60€.' }
         ]
     }
 ];
+
+
 
 onMounted(() => {
     const serviceId = route.params.id;
     service.value = services[serviceId];
     fetchAvailableSlots();
 });
+
+// Fonction pour récupérer la description du soin sélectionné
+const getSelectedTypeDescription = (typeName) => {
+    const type = service.value.types.find(t => t.name === typeName);
+    return type ? type.description : '';
+};
 
 // Récupérer les créneaux disponibles depuis la base de données
 const fetchAvailableSlots = async () => {
@@ -392,5 +404,12 @@ const formatSlot = (slot) => {
     border-radius: 0.5rem;
     border: 1px solid #cbd5e0;
     color: #555;
+}
+
+.selected-type-description {
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    color: #4a5568;
+    font-style: italic;
 }
 </style>
