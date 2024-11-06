@@ -201,7 +201,8 @@ const bookService = async () => {
                 serviceId: route.params.id,
                 date: selectedSlot.value.date,
                 hour: selectedSlot.value.hour,
-                employeeId: selectedSlot.value.employeeId
+                employeeId: selectedSlot.value.employeeId,
+                clientName: auth.currentUser.displayName
             });
 
             // Marquer le créneau comme réservé

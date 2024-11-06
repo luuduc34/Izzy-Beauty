@@ -21,6 +21,10 @@
 
         <!-- Employee Section -->
 
+        <!-- Afficher worklist -->
+
+        <Worklist />
+
         <!-- Afficher les disponibilités -->
         <section class="availabilities-section" v-if="userRole === 'employee'">
             <h2>Vos Disponibilités</h2>
@@ -75,12 +79,15 @@
         <section class="appointments-section">
             <h2 class="welcome">Vos rendez-vous</h2>
             <div v-if="appointments.length > 0" class="appointments-list">
-                <div v-for="appointment in appointments" :key="appointment.id" class="appointment-item">
+                <div v-for="appointment in appointments" :key="appointment.id"
+                    :class="['appointment-item', { 'past-appointment': isPastAppointment(appointment.date, appointment.hour) }]">
                     <h3>{{ appointment.serviceTitle }}</h3>
                     <p>Type de soin : {{ appointment.type }}</p>
                     <p>Date : {{ formatDate(appointment.date) }} à {{ appointment.hour }}h</p>
-                    <button @click="cancelAppointment(appointment)" class="cancel-button">Annuler le
-                        rendez-vous</button>
+                    <button @click="cancelAppointment(appointment)" class="cancel-button"
+                        :disabled="isPastAppointment(appointment.date, appointment.hour)">
+                        Annuler le rendez-vous
+                    </button>
                 </div>
             </div>
             <div v-else class="no-appointments">
@@ -131,6 +138,7 @@ import '@vuepic/vue-datepicker/dist/main.css';
 import Contact from "./Contact.vue";
 import Connexion from "./Connexion.vue";
 import Avis from "./Avis.vue";
+import Worklist from "./Worklist.vue";
 
 const router = useRouter();
 const userRole = ref('');
@@ -269,34 +277,16 @@ const saveAvailabilities = async () => {
                 service: availability.service
             });
         }
+
         alert('Disponibilités enregistrées avec succès!');
         availabilityList.value = []; // Réinitialiser la liste après l'enregistrement
+
+        // Mettre à jour les disponibilités affichées
+        await fetchAvailabilities();
+
     } catch (error) {
         console.error('Erreur lors de l\'enregistrement des disponibilités:', error);
         alert("Erreur lors de l'enregistrement. Veuillez réessayer.");
-    }
-};
-
-const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-
-        // Ajouter un document utilisateur si ce n'est pas déjà fait
-        const userRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userRef);
-        if (!userDoc.exists()) {
-            // Créer un nouveau document pour cet utilisateur
-            await setDoc(userRef, {
-                role: 'client',  // Par exemple, définir un rôle par défaut
-                displayName: user.displayName,
-                email: user.email
-            });
-            console.log("Nouveau document utilisateur créé !");
-        }
-    } catch (error) {
-        console.error("Erreur d'authentification:", error);
     }
 };
 
@@ -350,12 +340,24 @@ const formatDate = (date) => {
 };
 
 const cancelAppointment = async (appointment) => {
+    const currentDate = new Date();
+    const appointmentDate = new Date(appointment.date);
+
+    // Annulation possible seulement jusqu'à la veille
+    const dayBeforeAppointment = new Date(appointmentDate);
+    dayBeforeAppointment.setDate(dayBeforeAppointment.getDate() - 1);
+
+    if (currentDate > dayBeforeAppointment) {
+        alert("L'annulation n'est possible que jusqu'à la veille du rendez-vous.");
+        return;
+    }
+
     // Formatage du jour, de la date et de l'heure
     const appointmentDateObject = new Date(appointment.date + "T00:00:00");
     const appointmentDay = appointmentDateObject.toLocaleDateString('fr-FR', {
         weekday: 'long',
     });
-    const appointmentDate = appointmentDateObject.toLocaleDateString('fr-FR', {
+    const appointmentFormattedDate = appointmentDateObject.toLocaleDateString('fr-FR', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -363,7 +365,7 @@ const cancelAppointment = async (appointment) => {
     const appointmentTime = `${appointment.hour}:00`;
 
     // Demander une confirmation avant d'annuler le rendez-vous
-    const confirmationMessage = `Êtes-vous sûr de vouloir annuler le rendez-vous pour ${appointment.serviceTitle} (${appointment.type}) prévu le ${appointmentDay} ${appointmentDate} à ${appointmentTime} ?`;
+    const confirmationMessage = `Êtes-vous sûr de vouloir annuler le rendez-vous pour ${appointment.serviceTitle} (${appointment.type}) prévu le ${appointmentDay} ${appointmentFormattedDate} à ${appointmentTime} ?`;
     const confirmation = confirm(confirmationMessage);
 
     if (!confirmation) {
@@ -381,16 +383,14 @@ const cancelAppointment = async (appointment) => {
         // Rechercher la disponibilité correspondante dans 'availabilities'
         const availabilityQuery = query(
             collection(db, 'availabilities'),
-            where('employeeId', '==', appointment.employeeId), // 'userId' correspond à 'employeeId' dans 'availabilities'
-            where('date', '==', appointment.date), // Date en format string
-            where('hour', '==', appointment.hour), // Heure en format number
-            where('service', '==', appointment.serviceTitle) // 'serviceTitle' correspond à 'service'
+            where('employeeId', '==', appointment.employeeId),
+            where('date', '==', appointment.date),
+            where('hour', '==', appointment.hour),
+            where('service', '==', appointment.serviceTitle)
         );
 
         const querySnapshot = await getDocs(availabilityQuery);
-        console.log(appointment);
         if (!querySnapshot.empty) {
-            console.log("Disponibilité trouvée. Mise à jour...");
             const availabilityDoc = querySnapshot.docs[0];
             await updateDoc(doc(db, 'availabilities', availabilityDoc.id), {
                 booked: false
@@ -406,11 +406,17 @@ const cancelAppointment = async (appointment) => {
     }
 };
 
+
 // Fonction pour fermer la modal Avis
 const closeReviewModal = () => {
     showReviewForm.value = false;
 };
 
+// Fonction pour vérifier si un rendez-vous est passé
+const isPastAppointment = (date, hour) => {
+    const appointmentDate = new Date(`${date}T${hour.toString().padStart(2, '0')}:00:00`);
+    return appointmentDate < new Date();
+};
 </script>
 
 <style scoped>
@@ -594,6 +600,12 @@ h2 {
 .appointment-item {
     padding: 1rem;
     border-bottom: 1px solid #e2e8f0;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.appointment-item.past-appointment {
+    background-color: #f1f1f1;
+    color: #9e9e9e;
 }
 
 .appointment-item h3 {
