@@ -38,7 +38,6 @@ const submitReview = async () => {
             });
             alert("Merci pour votre avis !");
             reviewText.value = ''; // Réinitialiser l'avis
-            // Émettre un événement de fermeture
         } catch (error) {
             console.error('Erreur lors de l\'envoi de l\'avis :', error);
             alert('Une erreur est survenue, veuillez réessayer.');
