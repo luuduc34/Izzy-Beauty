@@ -373,7 +373,7 @@ const cancelAppointment = async (appointment) => {
     const confirmation = confirm(confirmationMessage);
 
     if (!confirmation) {
-        return; // Si l'utilisateur annule, ne continuez pas
+        return;
     }
 
     try {
