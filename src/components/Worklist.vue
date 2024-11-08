@@ -13,7 +13,7 @@
         <div v-else class="no-appointments">
             <p>Vous n'avez aucun rendez-vous assigné pour le moment.</p>
         </div>
-        <Export-csv />
+        <Csv />
     </section>
 </template>
 
@@ -24,7 +24,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth } from '../firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 
-import Export-csv from './Export-csv.vue';
+import Csv from './Csv.vue';
 
 const assignedAppointments = ref([]); // État pour stocker les rendez-vous assignés
 
