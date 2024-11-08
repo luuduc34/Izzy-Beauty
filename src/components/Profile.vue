@@ -5,6 +5,7 @@
         <section class="hero-section">
             <div class="hero-content" @click="goToHomepage">
                 <h1 class="title">Izzy Beauty</h1>
+                <img src="../assets/logo.jpg" alt="Logo Izzy Beauty" class="logo" />
             </div>
             <font-awesome-icon icon="home" class="home-icon" @click="goToHomepage" />
         </section>
@@ -534,11 +535,20 @@ h2 {
 }
 
 .hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     background: rgba(0, 0, 0, 0.3);
     padding: 2rem;
     border-radius: 1rem;
     cursor: pointer;
+}
+
+.logo {
+    width: 100px;
+    height: 100px;
 }
 
 .welcome {

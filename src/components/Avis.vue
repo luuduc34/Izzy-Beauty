@@ -54,8 +54,6 @@ const submitReview = async () => {
             alert("Merci pour votre avis !");
             reviewText.value = ''; // Réinitialiser l'avis
             rating.value = 0; // Réinitialiser la note
-            // Fermer la modal après l'envoi de l'avis
-            //$emit('close');
         } catch (error) {
             console.error('Erreur lors de l\'envoi de l\'avis :', error);
             alert('Une erreur est survenue, veuillez réessayer.');

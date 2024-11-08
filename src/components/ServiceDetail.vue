@@ -5,6 +5,7 @@
             <div class="hero-content">
                 <h1 class="welcome">Bienvenue au centre d'esthétique</h1>
                 <h1 class="title">Izzy Beauty</h1>
+                <img src="../assets/logo.jpg" alt="Logo Izzy Beauty" class="logo" />
             </div>
             <i class="fas fa-user profile-icon" @click="goToProfile"></i>
             <!-- Home Icon -->
@@ -248,10 +249,19 @@ const formatSlot = (slot) => {
 }
 
 .hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     background: rgba(0, 0, 0, 0.3);
     padding: 2rem;
     border-radius: 1rem;
+}
+
+.logo {
+    width: 100px;
+    height: 100px;
 }
 
 .welcome {
