@@ -375,6 +375,7 @@ const formatSlot = (slot) => {
     margin: auto;
     background-color: #ffffff;
     text-align: center;
+    color: #555;
 }
 
 .available-slots-container label {
